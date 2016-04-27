@@ -21,23 +21,66 @@ function getDefaults() {
     loadPath: 'https://api.locize.io/{{projectId}}/{{version}}/{{lng}}/{{ns}}',
     addPath: 'https://api.locize.io/missing/{{projectId}}/{{version}}/{{lng}}/{{ns}}',
     referenceLng: 'en',
-    version: 'latest'
+    version: 'latest',
+    reloadInterval: 60 * 60 * 1000
   };
 }
 
 class Backend {
-  constructor(services, options = {}) {
-    this.init(services, options);
+  constructor(services, options = {}, allOptions = {}) {
+    this.init(services, options, allOptions);
 
     this.type = 'backend';
   }
 
-  init(services, options = {}) {
+  init(services, options = {}, allOptions = {}) {
     this.services = services;
     this.options = {...getDefaults(), ...this.options, ...options};
+    this.allOptions = allOptions;
 
     this.queuedWrites = {};
     this.debouncedWrite = utils.debounce(this.write, 10000);
+
+    if (this.options.reloadInterval) {
+      setInterval(() => {
+        this.reload();
+      }, this.options.reloadInterval);
+    }
+  }
+
+  reload() {
+    const { backendConnector, resourceStore, languageUtils, logger } = this.services;
+
+    const currentLanguage = backendConnector.language;
+    if (currentLanguage && currentLanguage.toLowerCase() === 'cimode') return; // avoid loading resources for cimode
+
+    let toLoad = [];
+
+    let append = lng => {
+      let lngs = languageUtils.toResolveHierarchy(lng);
+      lngs.forEach(l => {
+        if (toLoad.indexOf(l) < 0) toLoad.push(l);
+      });
+    };
+
+    append(currentLanguage);
+
+    if (this.allOptions.preload) {
+      this.allOptions.preload.forEach(l => {
+        append(l);
+      });
+    }
+
+    toLoad.forEach(lng => {
+      this.allOptions.ns.forEach(ns => {
+        backendConnector.read(lng, ns, 'read', null, null, (err, data) => {
+          if (err) logger.warn(`loading namespace ${ns} for language ${lng} failed`, err);
+          if (!err && data) logger.log(`loaded namespace ${ns} for language ${lng}`, data);
+
+          backendConnector.loaded(`${lng}|${ns}`, err, data);
+        });
+      });
+    });
   }
 
   read(language, namespace, callback) {

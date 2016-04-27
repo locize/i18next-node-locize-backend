@@ -31,10 +31,8 @@ globals:
   describeEvent: false
   describeCommand: false
   describeScene: false
-  before: false
   it: false
   xit: false
-  window : false
   beforeEach : false
   afterEach : false
   after : false
@@ -63,7 +61,6 @@ ecmaFeatures:
   jsx: true
 
 rules:
-
   # ERRORS
   curly: [2, "multi-line"]
 
