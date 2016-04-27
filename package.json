@@ -1,16 +1,16 @@
 {
-  "name": "i18next-node-remote-backend",
-  "version": "0.0.3",
+  "name": "i18next-node-locize-backend",
+  "version": "0.0.1",
   "description": "node.js backend layer for i18next using request module to load resources from another server",
   "main": "./lib/index.js",
   "keywords": [
     "i18next",
     "i18next-backend"
   ],
-  "homepage": "https://github.com/i18next/i18next-node-remote-backend",
-  "bugs": "https://github.com/i18next/i18next-node-remote-backend/issues",
+  "homepage": "https://github.com/locize/i18next-node-locize-backend",
+  "bugs": "https://github.com/locize/i18next-node-locize-backend/issues",
   "dependencies": {
-    "request": "^2.65.0"
+    "request": "2.65.0"
   },
   "devDependencies": {
     "babel": "5.8.21",
