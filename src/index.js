@@ -4,7 +4,8 @@ import request from 'request';
 // https://gist.github.com/Xeoncross/7663273
 function ajax(url, callback, data) {
   if (data) {
-    request.post({uri: url, body: data, json: true}, function(err, res, body) {
+    let reqOptions = typeof url === 'string' ? { uri: url, body: data, json: true } : { ...url, ...{ body: data, json: true }};
+    request.post(reqOptions, function(err, res, body) {
       if (err) console.log(err);
       callback(err, body, res);
     });
