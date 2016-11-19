@@ -10,7 +10,7 @@
   "homepage": "https://github.com/locize/i18next-node-locize-backend",
   "bugs": "https://github.com/locize/i18next-node-locize-backend/issues",
   "dependencies": {
-    "request": "2.65.0"
+    "request": "2.79.0"
   },
   "devDependencies": {
     "babel": "5.8.21",

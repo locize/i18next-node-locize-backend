@@ -4,7 +4,7 @@ import request from 'request';
 // https://gist.github.com/Xeoncross/7663273
 function ajax(url, callback, data) {
   if (data) {
-    request.post({url: url, body: body, json: true}, function(err, res, body) {
+    request.post({uri: url, body: data, json: true}, function(err, res, body) {
       if (err) console.log(err);
       callback(err, body, res);
     });
@@ -143,13 +143,13 @@ class Backend {
       });
 
       const reqOptions = {
-        url: url,
+        uri: url,
         headers: {
           'Authorization': this.options.apiKey
         }
       };
 
-      ajax(reqOptions, function(err, data, res) {
+      ajax(reqOptions,(err, data, res) => {
         //const statusCode = xhr.status.toString();
         // TODO: if statusCode === 4xx do log
 
