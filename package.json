@@ -1,39 +1,37 @@
 {
   "name": "i18next-node-locize-backend",
   "version": "0.2.2",
-  "description": "node.js backend layer for i18next using request module to load resources from another server",
+  "description": "node.js backend layer for i18next using request module to load resources from locize service",
   "main": "./lib/index.js",
   "keywords": [
     "i18next",
-    "i18next-backend"
+    "i18next-backend",
+    "locize"
   ],
   "homepage": "https://github.com/locize/i18next-node-locize-backend",
   "bugs": "https://github.com/locize/i18next-node-locize-backend/issues",
   "dependencies": {
     "request": "2.79.0"
   },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/locize/i18next-node-locize-backend.git"
+  },
   "devDependencies": {
-    "babel": "5.8.21",
-    "babel-eslint": "4.1.0",
-    "chai": "2.3.0",
-    "eslint": "1.2.1",
-    "gulp": "3.9.0",
-    "gulp-babel": "5.3.0",
-    "gulp-bump": "1.0.0",
-    "gulp-eslint": "1.0.0",
-    "gulp-filter": "3.0.1",
-    "gulp-git": "1.6.0",
-    "gulp-if": "2.0.0",
-    "gulp-prompt": "0.1.2",
-    "gulp-tag-version": "1.3.0",
-    "gulp-shell": "0.5.0",
-    "mocha": "2.2.5",
-    "sinon": "1.17.1",
-    "watchify": "3.3.1",
-    "yargs": "3.29.0"
+    "babel-cli": "6.18.0",
+    "babel-core": "6.18.2",
+    "babel-eslint": "7.1.1",
+    "babel-preset-es2015": "6.18.0",
+    "babel-preset-stage-0": "6.16.0",
+    "eslint": "3.10.2",
+    "rimraf": "2.5.4"
   },
   "scripts": {
-    "test": "gulp test"
+    "clean": "rimraf lib && mkdirp lib",
+    "build:cjs": "babel src --out-dir lib",
+    "build": "npm run clean && npm run build:cjs",
+    "preversion": "npm run build && git push",
+    "postversion": "git push && git push --tags"
   },
   "author": "Jan Mühlemann <jan.muehlemann@gmail.com> (https://github.com/jamuhl)",
   "license": "MIT"
