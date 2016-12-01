@@ -27,7 +27,7 @@
     "rimraf": "2.5.4"
   },
   "scripts": {
-    "clean": "rimraf lib && mkdirp lib",
+    "clean": "rimraf lib && mkdir lib",
     "build:cjs": "babel src --out-dir lib",
     "build": "npm run clean && npm run build:cjs",
     "preversion": "npm run build && git push",
