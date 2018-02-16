@@ -140,7 +140,9 @@ class Backend {
 
       const payload = {};
       missings.forEach(item => {
-        payload[item.key] = item.fallbackValue || '';
+        const value = (item.options && item.options.tDescription) ? { value: item.fallbackValue || '', context: { text: item.options.tDescription } } : item.fallbackValue || ''
+
+        payload[item.key] = value;
       });
 
       const reqOptions = {
@@ -167,8 +169,8 @@ class Backend {
     }
   }
 
-  queue(lng, namespace, key, fallbackValue, callback) {
-    utils.pushPath(this.queuedWrites, [lng, namespace], {key: key, fallbackValue: fallbackValue || '', callback: callback});
+  queue(lng, namespace, key, fallbackValue, callback, options) {
+    utils.pushPath(this.queuedWrites, [lng, namespace], {key: key, fallbackValue: fallbackValue || '', callback: callback, options});
 
     this.debouncedWrite(lng, namespace);
   }
