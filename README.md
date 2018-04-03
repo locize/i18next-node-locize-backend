@@ -59,14 +59,14 @@ i18next
 on construction:
 
 ```js
-var Backend = require('i18next-node-locize-backend').default;
+var Backend = require('i18next-node-locize-backend');
 var backend = new Backend(options);
 ```
 
 by calling init:
 
 ```js
-var Backend = require('i18next-node-locize-backend').default;
+var Backend = require('i18next-node-locize-backend');
 var backend = new Backend();
 backend.init(options);
 ```
@@ -81,8 +81,6 @@ Will return a list of all languages in your project including percentage of tran
 ```js
 import Backend from 'i18next-node-locize-backend';
 const backend = new Backend(options);
-// var Backend = require('i18next-node-locize-backend').default;
-// var backend = new Backend(options);
 
 backend.getLanguages((err, data) => {
   /*
@@ -120,8 +118,6 @@ Will return an object containing useful informations for the i18next init option
 ```js
 import Backend from 'i18next-node-locize-backend';
 const backend = new Backend(options);
-// var Backend = require('i18next-node-locize-backend').default;
-// var backend = new Backend(options);
 
 backend.getOptions((err, data) => {
   /*
@@ -155,7 +151,6 @@ You will get i18next options for (same as above backend.getOptions):
 ```js
 import i18next from 'i18next';
 import Backend from 'i18next-node-locize-backend';
-// var Backend = require('i18next-node-locize-backend').default;
 
 const backend = new Backend({
   projectId: '[PROJECTID]',
