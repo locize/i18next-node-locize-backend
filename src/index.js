@@ -24,21 +24,34 @@ function getDefaults() {
     addPath: 'https://api.locize.io/missing/{{projectId}}/{{version}}/{{lng}}/{{ns}}',
     referenceLng: 'en',
     version: 'latest',
+    whitelistThreshold: 0.9,
     reloadInterval: 60 * 60 * 1000
   };
 }
 
 class Backend {
-  constructor(services, options = {}, allOptions = {}) {
-    this.init(services, options, allOptions);
+  constructor(services, options = {}, allOptions = {}, callback) {
+    if (services && services.projectId) {
+      this.init(null, services,allOptions, options);
+    } else {
+      this.init(null, options,allOptions, callback);
+    }
 
     this.type = 'backend';
   }
 
-  init(services, options = {}, allOptions = {}) {
-    this.services = services;
-    this.options = {...getDefaults(), ...this.options, ...options};
+  init(services, options = {}, allOptions = {}, callback) {
+    this.options = {...getDefaults(), ...this.options, ...options}; // initial
     this.allOptions = allOptions;
+
+    if (typeof callback === 'function') {
+      this.getOptions((err, opts) => {
+        if (err) return callback(err);
+
+        this.options.referenceLng = options.referenceLng || opts.referenceLng || this.options.referenceLng;
+        callback(null, opts);
+      });
+    }
 
     this.queuedWrites = { pending: {} };
     this.debouncedProcess = utils.debounce(this.process, 10000);
@@ -86,13 +99,45 @@ class Backend {
   }
 
   getLanguages(callback) {
-    let url = this.services.interpolator.interpolate(this.options.getLanguagesPath, { projectId: this.options.projectId });
+    let url = utils.interpolate(this.options.getLanguagesPath, { projectId: this.options.projectId });
 
     this.loadUrl(url, callback);
   }
 
+  getOptions(callback) {
+    this.getLanguages((err, data) => {
+      if (err) return callback(err);
+
+      const keys = Object.keys(data);
+
+      const referenceLng = keys.reduce((mem, k) => {
+        const item = data[k];
+        if (item.isReferenceLanguage) mem = k;
+        return mem;
+      }, '');
+
+      const whitelist = keys.reduce((mem, k) => {
+        const item = data[k];
+        if (item.translated[this.options.version] && item.translated[this.options.version] >= this.options.whitelistThreshold) mem.push(k)
+        return mem;
+      }, []);
+
+      const hasRegion = keys.reduce((mem, k) => {
+        if (k.indexOf('-') > -1) return true;
+        return mem;
+      }, false);
+
+      callback(null, {
+        fallbackLng: referenceLng,
+        referenceLng,
+        whitelist,
+        load: hasRegion ? 'all' : 'languageOnly'
+      });
+    });
+  }
+
   read(language, namespace, callback) {
-    let url = this.services.interpolator.interpolate(this.options.loadPath, { lng: language, ns: namespace, projectId: this.options.projectId, version: this.options.version });
+    let url = utils.interpolate(this.options.loadPath, { lng: language, ns: namespace, projectId: this.options.projectId, version: this.options.version });
 
     this.loadUrl(url, callback);
   }
@@ -128,7 +173,7 @@ class Backend {
     let lock = utils.getPath(this.queuedWrites, ['locks', lng, namespace]);
     if (lock) return;
 
-    let url = this.services.interpolator.interpolate(this.options.addPath, { lng: lng, ns: namespace, projectId: this.options.projectId, version: this.options.version });
+    let url = utils.interpolate(this.options.addPath, { lng: lng, ns: namespace, projectId: this.options.projectId, version: this.options.version });
 
     let missings = utils.getPath(this.queuedWrites, [lng, namespace]);
     utils.setPath(this.queuedWrites, [lng, namespace], []);

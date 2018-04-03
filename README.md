@@ -59,14 +59,112 @@ i18next
 on construction:
 
 ```js
-var Backend = require('i18next-node-locize-backend');
-var backend = new Backend(null, options);
+var Backend = require('i18next-node-locize-backend').default;
+var backend = new Backend(options);
 ```
 
 by calling init:
 
 ```js
-var Backend = require('i18next-node-locize-backend');
+var Backend = require('i18next-node-locize-backend').default;
 var backend = new Backend();
-backend.init(null, options);
+backend.init(options);
+```
+
+
+## Additional API endpoints
+
+### backend.getLanguages
+
+Will return a list of all languages in your project including percentage of translations done per version.
+
+```js
+import Backend from 'i18next-node-locize-backend';
+const backend = new Backend(options);
+// var Backend = require('i18next-node-locize-backend').default;
+// var backend = new Backend(options);
+
+backend.getLanguages((err, data) => {
+  /*
+  data is:
+
+  {
+    "en": {
+      "name": "English",
+      "nativeName": "English",
+      "isReferenceLanguage": true,
+      "translated": {
+        "latest": 1
+      }
+    },
+    "de": {
+      "name": "German",
+      "nativeName": "Deutsch",
+      "isReferenceLanguage": false,
+      "translated": {
+        "latest": 0.9
+      }
+    }
+  }
+  */
+});
+
+// or
+i18next.services.backendConnector.backend.getLanguages(callback);
+```
+
+### backend.getOptions
+
+Will return an object containing useful informations for the i18next init options.
+
+```js
+import Backend from 'i18next-node-locize-backend';
+const backend = new Backend(options);
+// var Backend = require('i18next-node-locize-backend').default;
+// var backend = new Backend(options);
+
+backend.getOptions((err, data) => {
+  /*
+  data is:
+
+  {
+    fallbackLng: 'en',
+    referenceLng: 'en',
+    whitelist: ['en', 'de'],
+    load: 'languageOnly|all' // depending on your whitelist has locals having region like en-US
+  }
+  */
+});
+
+// or
+i18next.services.backendConnector.backend.getOptions(callback);
+```
+
+You can set a threshold for languages to be added to whitelist by setting whitelistThreshold in backend options (eg: 1 = 100% translated, 0.9 = 90% translated).
+
+## SPECIAL - let the backend determine some options to improve loading
+
+You can load some information from the backend to eg. set whitelist for i18next just supporting languages you got in your locize project.
+
+You will get i18next options for (same as above backend.getOptions):
+
+- fallbackLng
+- whitelist
+- load
+
+```js
+import i18next from 'i18next';
+import Backend from 'i18next-node-locize-backend';
+// var Backend = require('i18next-node-locize-backend').default;
+
+const backend = new Backend({
+  projectId: '[PROJECTID]',
+  apiKey: '[APIKEY]',
+  version: '[VERSION]',
+  // referenceLng -> not needed as will be loaded from API
+}, (err, opts) => {
+  i18next
+    .use(backend)
+    .init({ ...opts, ...yourOptions}); // yourOptions should not include backendOptions!
+});
 ```
