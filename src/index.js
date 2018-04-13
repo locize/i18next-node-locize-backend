@@ -32,15 +32,16 @@ function getDefaults() {
 class Backend {
   constructor(services, options = {}, allOptions = {}, callback) {
     if (services && services.projectId) {
-      this.init(null, services,allOptions, options);
+      this.init(null, services, allOptions, options);
     } else {
-      this.init(null, options,allOptions, callback);
+      this.init(services, options, allOptions, callback);
     }
 
     this.type = 'backend';
   }
 
   init(services, options = {}, allOptions = {}, callback) {
+    this.services = services;
     this.options = {...getDefaults(), ...this.options, ...options}; // initial
     this.allOptions = allOptions;
 
@@ -65,6 +66,7 @@ class Backend {
 
   reload() {
     const { backendConnector, resourceStore, languageUtils, logger } = this.services;
+    if (!backendConnector) return;
 
     const currentLanguage = backendConnector.language;
     if (currentLanguage && currentLanguage.toLowerCase() === 'cimode') return; // avoid loading resources for cimode

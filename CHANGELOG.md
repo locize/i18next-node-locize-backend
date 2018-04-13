@@ -1,3 +1,6 @@
+### v2.2.2
+- fixes backendConnector call (setting services on init)
+
 ### v2.2.1
 - fix getLanguages route to return error on not getting data
 
