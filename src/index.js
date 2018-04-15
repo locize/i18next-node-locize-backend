@@ -22,6 +22,7 @@ function getDefaults() {
     loadPath: 'https://api.locize.io/{{projectId}}/{{version}}/{{lng}}/{{ns}}',
     getLanguagesPath: 'https://api.locize.io/languages/{{projectId}}',
     addPath: 'https://api.locize.io/missing/{{projectId}}/{{version}}/{{lng}}/{{ns}}',
+    updatePath: 'https://api.locize.io/update/{{projectId}}/{{version}}/{{lng}}/{{ns}}',
     referenceLng: 'en',
     version: 'latest',
     whitelistThreshold: 0.9,
@@ -164,11 +165,11 @@ class Backend {
     });
   }
 
-  create(languages, namespace, key, fallbackValue, callback) {
+  create(languages, namespace, key, fallbackValue, callback, options) {
     if (typeof languages === 'string') languages = [languages];
 
     languages.forEach(lng => {
-      if (lng === this.options.referenceLng) this.queue.call(this, this.options.referenceLng, namespace, key, fallbackValue, callback);
+      if (lng === this.options.referenceLng) this.queue.call(this, this.options.referenceLng, namespace, key, fallbackValue, callback, options);
     });
   }
 
@@ -178,6 +179,10 @@ class Backend {
 
     let url = utils.interpolate(this.options.addPath, { lng: lng, ns: namespace, projectId: this.options.projectId, version: this.options.version });
 
+    let missingUrl = utils.interpolate(this.options.addPath, { lng: lng, ns: namespace, projectId: this.options.projectId, version: this.options.version });
+    let updatesUrl = utils.interpolate(this.options.updatePath, { lng: lng, ns: namespace, projectId: this.options.projectId, version: this.options.version });
+
+
     let missings = utils.getPath(this.queuedWrites, [lng, namespace]);
     utils.setPath(this.queuedWrites, [lng, namespace], []);
 
@@ -185,34 +190,72 @@ class Backend {
       // lock
       utils.setPath(this.queuedWrites, ['locks', lng, namespace], true);
 
-      const payload = {};
+      let hasMissing= false;
+      let hasUpdates = false;
+      const payloadMissing = {};
+      const payloadUpdate = {};
+
       missings.forEach(item => {
         const value = (item.options && item.options.tDescription) ? { value: item.fallbackValue || '', context: { text: item.options.tDescription } } : item.fallbackValue || ''
-
-        payload[item.key] = value;
+        if (item.options && item.options.isUpdate) {
+          if (!hasUpdates) hasUpdates = true;
+          payloadUpdate[item.key] = value;
+        } else {
+          if (!hasMissing) hasMissing = true;
+          payloadMissing[item.key] = value;
+        }
       });
 
-      const reqOptions = {
-        uri: url,
-        headers: {
-          'Authorization': this.options.apiKey
+      let todo = 0;
+      if (hasMissing) todo++;
+      if (hasUpdates) todo++;
+      const doneOne = () => {
+        todo--;
+
+        if (!todo) {
+          // unlock
+          utils.setPath(this.queuedWrites, ['locks', lng, namespace], false);
+
+          missings.forEach((missing) => {
+            if (missing.callback) missing.callback();
+          });
+
+          // rerun
+          this.debouncedProcess(lng, namespace);
         }
-      };
+      }
 
-      ajax(reqOptions,(err, data, res) => {
-        //const statusCode = xhr.status.toString();
-        // TODO: if statusCode === 4xx do log
+      if (!todo) doneOne();
 
-        // unlock
-        utils.setPath(this.queuedWrites, ['locks', lng, namespace], false);
+      if (hasMissing) {
+        const reqOptions = {
+          uri: missingUrl,
+          headers: {
+            'Authorization': this.options.apiKey
+          }
+        };
+        ajax(reqOptions, (err, data, res) => {
+          //const statusCode = xhr.status.toString();
+          // TODO: if statusCode === 4xx do log
 
-        missings.forEach((missing) => {
-          if (missing.callback) missing.callback();
-        });
+          doneOne();
+        }, payloadMissing);
+      }
 
-        // rerun
-        this.debouncedProcess();
-      }, payload);
+      if (hasUpdates) {
+        const reqOptions = {
+          uri: updatesUrl,
+          headers: {
+            'Authorization': this.options.apiKey
+          }
+        };
+        ajax(reqOptions, (err, data, res) => {
+          //const statusCode = xhr.status.toString();
+          // TODO: if statusCode === 4xx do log
+
+          doneOne();
+        }, payloadUpdate);
+      }
     }
   }
 

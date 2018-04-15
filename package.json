@@ -1,6 +1,6 @@
 {
   "name": "i18next-node-locize-backend",
-  "version": "2.2.2",
+  "version": "2.3.0",
   "description": "node.js backend layer for i18next using request module to load resources from locize service",
   "main": "./index.js",
   "keywords": [
