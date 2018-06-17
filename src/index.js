@@ -20,11 +20,13 @@ function ajax(url, callback, data) {
 function getDefaults() {
   return {
     loadPath: 'https://api.locize.io/{{projectId}}/{{version}}/{{lng}}/{{ns}}',
+    privatePath: 'https://api.locize.io/private/{{projectId}}/{{version}}/{{lng}}/{{ns}}',
     getLanguagesPath: 'https://api.locize.io/languages/{{projectId}}',
     addPath: 'https://api.locize.io/missing/{{projectId}}/{{version}}/{{lng}}/{{ns}}',
     updatePath: 'https://api.locize.io/update/{{projectId}}/{{version}}/{{lng}}/{{ns}}',
     referenceLng: 'en',
     version: 'latest',
+    private: false,
     whitelistThreshold: 0.9,
     reloadInterval: 60 * 60 * 1000
   };
@@ -141,7 +143,17 @@ class Backend {
   }
 
   read(language, namespace, callback) {
-    let url = utils.interpolate(this.options.loadPath, { lng: language, ns: namespace, projectId: this.options.projectId, version: this.options.version });
+    let url;
+    if (this.options.private) {
+      url = {
+        uri: utils.interpolate(this.options.privatePath, { lng: language, ns: namespace, projectId: this.options.projectId, version: this.options.version }),
+        headers: {
+          'Authorization': this.options.apiKey
+        }
+      };
+    } else {
+      url = utils.interpolate(this.options.loadPath, { lng: language, ns: namespace, projectId: this.options.projectId, version: this.options.version });
+    }
 
     this.loadUrl(url, callback);
   }

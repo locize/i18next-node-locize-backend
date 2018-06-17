@@ -1,3 +1,9 @@
+### v2.4.0
+- support for private versions
+
+### v2.3.0
+- support for update route
+
 ### v2.2.2
 - fixes backendConnector call (setting services on init)
 
