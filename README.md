@@ -37,7 +37,7 @@ As with all modules you can either pass the constructor function (class) to the 
   referenceLng: '[LNG]',
 
   // version - defaults to latest
-  version: '[VERSION]'
+  version: '[VERSION]',
 
   // private - set to true if you version on locize is set to use private publish
   private: false
