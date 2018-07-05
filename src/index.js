@@ -246,7 +246,7 @@ class Backend {
             'Authorization': this.options.apiKey
           }
         };
-        ajax(reqOptions, (err, data, res) => {
+        ajax(reqOptions, (err, payloadMissing, res) => {
           //const statusCode = xhr.status.toString();
           // TODO: if statusCode === 4xx do log
 
@@ -261,7 +261,7 @@ class Backend {
             'Authorization': this.options.apiKey
           }
         };
-        ajax(reqOptions, (err, data, res) => {
+        ajax(reqOptions, (err, payloadUpdate, res) => {
           //const statusCode = xhr.status.toString();
           // TODO: if statusCode === 4xx do log
 

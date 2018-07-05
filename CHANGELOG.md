@@ -1,3 +1,6 @@
+### v2.4.1
+- fixes issue with payloads
+
 ### v2.4.0
 - support for private versions
 
