@@ -60,8 +60,11 @@ class Backend {
     this.queuedWrites = { pending: {} };
     this.debouncedProcess = utils.debounce(this.process, 10000);
 
+    if (this.interval) {
+      clearInterval(this.interval);
+    }
     if (this.options.reloadInterval) {
-      setInterval(() => {
+      this.interval = setInterval(() => {
         this.reload();
       }, this.options.reloadInterval);
     }
