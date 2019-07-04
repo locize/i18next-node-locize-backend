@@ -1,10 +1,10 @@
 {
   "env": {
     "development": {
-      "presets": [ "es2015", "stage-0" ]
+      "presets": ["env", "stage-0" ]
     },
     "jsnext": {
-      "presets": [ ["es2015", { "modules": false }], "stage-0"  ]
+      "presets": [ ["env", { "modules": false }], "stage-0" ]
     }
   }
 }
