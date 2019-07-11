@@ -1,3 +1,7 @@
+### v2.4.3
+
+- update deps [6](https://github.com/locize/i18next-node-locize-backend/pull/6)
+
 ### v2.4.2
 
 - clear existing interval on init call if existing - make new one (or not if set false)
