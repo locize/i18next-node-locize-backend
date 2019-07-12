@@ -170,7 +170,7 @@ const backend = new Backend({
 ## IMPORTANT ADVICE FOR SERVERLESS environments - AWS lambda, Google Cloud Functions, Azure Functions, etc...
 
 <font color="red">
-**DO not use this module!!!**
+  <b>DO NOT USE THIS MODULE!!!</b>
 </font>
 
 Every time you get a request to your serverless function a new "container" is created, this means caching is not possible (not in-memory and not on its filesystem).
