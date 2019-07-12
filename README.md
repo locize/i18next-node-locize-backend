@@ -166,3 +166,46 @@ const backend = new Backend({
     .init({ ...opts, ...yourOptions}); // yourOptions should not include backendOptions!
 });
 ```
+
+## IMPORTANT ADVICE FOR SERVERLESS environments - AWS lambda, Google Cloud Functions, Azure Functions, etc...
+
+<font color="red">
+**DO not use this module!!!**
+</font>
+
+Every time you get a request to your serverless function a new "container" is created, this means caching is not possible (not in-memory and not on its filesystem).
+**We suggest to download the translations in your CI/CD pipeline (via [cli](https://github.com/locize/locize-cli#download-current-published-files) or via [api](https://docs.locize.com/integration/api#list-all-namespace-resources)) and package them with your serverless function.**
+
+### For example with [i18next-node-fs-backend](https://github.com/i18next/i18next-node-fs-backend)
+
+```js
+import i18next from 'i18next';
+import Backend from 'i18next-node-fs-backend';
+
+const backend = new Backend({
+  // path where resources get loaded from
+  loadPath: '/locales/{{lng}}/{{ns}}.json'
+});
+
+i18next
+  .use(backend)
+  .init({ ...opts, ...yourOptions}); // yourOptions should not include backendOptions!
+```
+
+### or just [import/require](https://www.i18next.com/how-to/add-or-load-translations#add-on-init) your files directly
+
+```js
+import i18next from 'i18next';
+import en from './locales/en.json'
+import de from './locales/de.json'
+
+i18next
+  .init({
+    ...opts,
+    ...yourOptions,
+    resources: {
+      en,
+      de
+    }
+  });
+```
