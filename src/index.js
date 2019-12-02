@@ -47,6 +47,13 @@ class Backend {
     this.services = services;
     this.options = {...getDefaults(), ...this.options, ...options}; // initial
     this.allOptions = allOptions;
+    
+    if (!this.options.projectId || this.options.projectId === 'projectid' || this.options.projectId === 'projectId') {
+      const err = new Error('projectId is not valid');
+      console.error(err);
+      if (typeof callback === 'function') return callback(err);
+      throw err;
+    }
 
     if (typeof callback === 'function') {
       this.getOptions((err, opts) => {
