@@ -1,3 +1,7 @@
+### 2.4.4
+
+- warn for missing options
+
 ### v2.4.3
 
 - update deps [6](https://github.com/locize/i18next-node-locize-backend/pull/6)

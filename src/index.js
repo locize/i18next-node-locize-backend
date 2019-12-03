@@ -107,6 +107,9 @@ class Backend {
   }
 
   getLanguages(callback) {
+    const isMissing = utils.isMissingOption(this.options, ['projectId'])
+    if (isMissing) return callback(new Error(isMissing));
+
     let url = utils.interpolate(this.options.getLanguagesPath, { projectId: this.options.projectId });
 
     this.loadUrl(url, callback);
@@ -148,6 +151,9 @@ class Backend {
   read(language, namespace, callback) {
     let url;
     if (this.options.private) {
+      const isMissing = utils.isMissingOption(this.options, ['projectId', 'version', 'apiKey'])
+      if (isMissing) return callback(new Error(isMissing), false);
+
       url = {
         uri: utils.interpolate(this.options.privatePath, { lng: language, ns: namespace, projectId: this.options.projectId, version: this.options.version }),
         headers: {
@@ -155,6 +161,9 @@ class Backend {
         }
       };
     } else {
+      const isMissing = utils.isMissingOption(this.options, ['projectId', 'version'])
+      if (isMissing) return callback(new Error(isMissing), false);
+
       url = utils.interpolate(this.options.loadPath, { lng: language, ns: namespace, projectId: this.options.projectId, version: this.options.version });
     }
 
@@ -181,6 +190,10 @@ class Backend {
   }
 
   create(languages, namespace, key, fallbackValue, callback, options) {
+    // missing options
+    const isMissing = utils.isMissingOption(this.options, ['projectId', 'version', 'apiKey', 'referenceLng'])
+    if (isMissing) return callback(new Error(isMissing));
+
     if (typeof languages === 'string') languages = [languages];
 
     languages.forEach(lng => {
