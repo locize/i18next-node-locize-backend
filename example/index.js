@@ -12,8 +12,8 @@ const yourOptions = {
     projectId: '49fb5220-dfc0-47bb-987c-b737524d76af',
     apiKey: '3dc91839-ca3e-440d-a1a3-ce52ebfd12e3',
 		// version: 'staging',
-    // loadPath: 'https://api.locize.io/2596e805-2ce2-4e21-9481-ee62202ababd/{{version}}/{{lng}}/{{ns}}',
-    // addPath: 'https://api.locize.io/missing/2596e805-2ce2-4e21-9481-ee62202ababd/{{version}}/{{lng}}/{{ns}}'
+    // loadPath: 'https://api.locize.app/2596e805-2ce2-4e21-9481-ee62202ababd/{{version}}/{{lng}}/{{ns}}',
+    // addPath: 'https://api.locize.app/missing/2596e805-2ce2-4e21-9481-ee62202ababd/{{version}}/{{lng}}/{{ns}}'
   }
 };
 
