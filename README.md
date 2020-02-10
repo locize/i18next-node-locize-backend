@@ -193,6 +193,8 @@ i18next
   .init({ ...opts, ...yourOptions}); // yourOptions should not include backendOptions!
 ```
 
+#### Another example with [i18next-sync-fs-backend](https://github.com/sallar/i18next-sync-fs-backend): [here](https://stackoverflow.com/questions/59591125/initialize-i18next-in-azure-function/59634847#59634847)
+
 ### or just [import/require](https://www.i18next.com/how-to/add-or-load-translations#add-on-init) your files directly
 
 ```js
