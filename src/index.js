@@ -175,6 +175,7 @@ class Backend {
       if (err) return callback(err, true); // retry
 
       const statusCode = res.statusCode;
+      if (statusCode && (statusCode === 408 || statusCode === 400)) return callback('failed loading ' + url, true /* retry */);
       if (statusCode && statusCode >= 500 && statusCode < 600) return callback('failed loading ' + url, true /* retry */);
       if (statusCode && statusCode >= 400 && statusCode < 500) return callback('failed loading ' + url, false /* no retry */);
 

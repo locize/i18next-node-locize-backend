@@ -1,3 +1,7 @@
+### 3.0.1
+
+- retry on 400, 408 status
+
 ### 3.0.0
 
 - using the new `locize.app` domain replacing the deprecated `locize.io` domain
