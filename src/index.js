@@ -1,7 +1,6 @@
 import * as utils from './utils';
 import request from 'request';
 
-// https://gist.github.com/Xeoncross/7663273
 function ajax(url, callback, data) {
   if (data) {
     let reqOptions = typeof url === 'string' ? { uri: url, body: data, json: true } : { ...url, ...{ body: data, json: true }};
@@ -28,7 +27,8 @@ function getDefaults() {
     version: 'latest',
     private: false,
     whitelistThreshold: 0.9,
-    reloadInterval: 60 * 60 * 1000
+    reloadInterval: 60 * 60 * 1000,
+    checkForProjectTimeout: 3 * 1000
   };
 }
 
@@ -47,6 +47,8 @@ class Backend {
     this.services = services;
     this.options = {...getDefaults(), ...this.options, ...options}; // initial
     this.allOptions = allOptions;
+    this.somethingLoaded = false;
+    this.isProjectNotExisting = false;
 
     if (typeof callback === 'function') {
       this.getOptions((err, opts) => {
@@ -107,12 +109,21 @@ class Backend {
   }
 
   getLanguages(callback) {
-    const isMissing = utils.isMissingOption(this.options, ['projectId'])
+    const isMissing = utils.isMissingOption(this.options, ['projectId']);
     if (isMissing) return callback(new Error(isMissing));
 
     let url = utils.interpolate(this.options.getLanguagesPath, { projectId: this.options.projectId });
 
-    this.loadUrl(url, callback);
+    if (this.isProjectNotExisting) return callback(new Error(`locize project ${this.options.projectId} does not exist!`));
+
+    this.loadUrl(url, (err, ret, info) => {
+      if (!this.somethingLoaded && info && info.resourceNotExisting) {
+        this.isProjectNotExisting = true;
+        return callback(new Error(`locize project ${this.options.projectId} does not exist!`));
+      }
+      this.somethingLoaded = true;
+      callback(err, ret)
+    });
   }
 
   getOptions(callback) {
@@ -148,7 +159,22 @@ class Backend {
     });
   }
 
+  checkIfProjectExists(callback) {
+    const { logger } = this.services;
+    if (this.somethingLoaded) {
+      if (callback) callback(null);
+      return;
+    }
+    this.getLanguages((err) => {
+      if (err && err.message && err.message.indexOf('does not exist') > 0) {
+        if (callback) return callback(err);
+        logger.error(err.message);
+      }
+    });
+  }
+
   read(language, namespace, callback) {
+    const { logger } = this.services || { logger: console };
     let url;
     if (this.options.private) {
       const isMissing = utils.isMissingOption(this.options, ['projectId', 'version', 'apiKey'])
@@ -167,7 +193,23 @@ class Backend {
       url = utils.interpolate(this.options.loadPath, { lng: language, ns: namespace, projectId: this.options.projectId, version: this.options.version });
     }
 
-    this.loadUrl(url, callback);
+    if (this.isProjectNotExisting) {
+      const err = new Error(`locize project ${this.options.projectId} does not exist!`);
+      logger.error(err.message);
+      if (callback) callback(err);
+      return;
+    }
+
+    this.loadUrl(url, (err, ret, info) => {
+      if (!this.somethingLoaded) {
+        if (info && info.resourceNotExisting) {
+          setTimeout(() => this.checkIfProjectExists(), this.options.checkForProjectTimeout);
+        } else {
+          this.somethingLoaded = true;
+        }
+      }
+      callback(err, ret)
+    });
   }
 
   loadUrl(url, callback) {
@@ -175,9 +217,10 @@ class Backend {
       if (err) return callback(err, true); // retry
 
       const statusCode = res.statusCode;
-      if (statusCode && (statusCode === 408 || statusCode === 400)) return callback('failed loading ' + url, true /* retry */);
-      if (statusCode && statusCode >= 500 && statusCode < 600) return callback('failed loading ' + url, true /* retry */);
-      if (statusCode && statusCode >= 400 && statusCode < 500) return callback('failed loading ' + url, false /* no retry */);
+      const resourceNotExisting = res.headers['x-cache'] === 'Error from cloudfront'
+      if (statusCode && (statusCode === 408 || statusCode === 400)) return callback('failed loading ' + url, true /* retry */, { resourceNotExisting });
+      if (statusCode && statusCode >= 500 && statusCode < 600) return callback('failed loading ' + url, true /* retry */, { resourceNotExisting });
+      if (statusCode && statusCode >= 400 && statusCode < 500) return callback('failed loading ' + url, false /* no retry */, { resourceNotExisting });
 
       let ret;
       try {
@@ -185,28 +228,33 @@ class Backend {
       } catch (e) {
         err = 'failed parsing ' + url + ' to json';
       }
-      if (err) return callback(err, false);
-      callback(null, ret);
+      if (err) return callback(err, false, { resourceNotExisting });
+      callback(null, ret, { resourceNotExisting });
     });
   }
 
   create(languages, namespace, key, fallbackValue, callback, options) {
-    // missing options
-    const isMissing = utils.isMissingOption(this.options, ['projectId', 'version', 'apiKey', 'referenceLng'])
-    if (isMissing) return callback(new Error(isMissing));
+    this.checkIfProjectExists((err) => {
+      if (err) {
+        if (callback) callback(err);
+        return;
+      }
 
-    if (typeof languages === 'string') languages = [languages];
+      // missing options
+      const isMissing = utils.isMissingOption(this.options, ['projectId', 'version', 'apiKey', 'referenceLng'])
+      if (isMissing) return callback(new Error(isMissing));
 
-    languages.forEach(lng => {
-      if (lng === this.options.referenceLng) this.queue.call(this, this.options.referenceLng, namespace, key, fallbackValue, callback, options);
+      if (typeof languages === 'string') languages = [languages];
+
+      languages.forEach(lng => {
+        if (lng === this.options.referenceLng) this.queue.call(this, this.options.referenceLng, namespace, key, fallbackValue, callback, options);
+      });
     });
   }
 
   write(lng, namespace) {
     let lock = utils.getPath(this.queuedWrites, ['locks', lng, namespace]);
     if (lock) return;
-
-    let url = utils.interpolate(this.options.addPath, { lng: lng, ns: namespace, projectId: this.options.projectId, version: this.options.version });
 
     let missingUrl = utils.interpolate(this.options.addPath, { lng: lng, ns: namespace, projectId: this.options.projectId, version: this.options.version });
     let updatesUrl = utils.interpolate(this.options.updatePath, { lng: lng, ns: namespace, projectId: this.options.projectId, version: this.options.version });

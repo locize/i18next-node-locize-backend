@@ -7,6 +7,7 @@ const yourOptions = {
   saveMissing: true,
   preload: ['en', 'de'],
   fallbackLng: 'en',
+  lng: 'en',
   backend: {
     referenceLng: 'en',
     projectId: '49fb5220-dfc0-47bb-987c-b737524d76af',
