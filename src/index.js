@@ -165,15 +165,6 @@ class Backend {
       if (callback) callback(null);
       return;
     }
-    if (this.isProjectNotExisting) {
-      const err = new Error(`locize project ${this.options.projectId} does not exist!`);
-      if (callback) {
-        callback(err);
-      } else {
-        logger.error(err.message);
-      }
-      return;
-    }
     this.getLanguages((err) => {
       if (err && err.message && err.message.indexOf('does not exist') > 0) {
         if (callback) return callback(err);
@@ -183,6 +174,7 @@ class Backend {
   }
 
   read(language, namespace, callback) {
+    const { logger } = this.services || { logger: console };
     let url;
     if (this.options.private) {
       const isMissing = utils.isMissingOption(this.options, ['projectId', 'version', 'apiKey'])
@@ -203,11 +195,8 @@ class Backend {
 
     if (this.isProjectNotExisting) {
       const err = new Error(`locize project ${this.options.projectId} does not exist!`);
-      if (callback) {
-        callback(err);
-      } else {
-        logger.error(err.message);
-      }
+      logger.error(err.message);
+      if (callback) callback(err);
       return;
     }
 
