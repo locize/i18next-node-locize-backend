@@ -48,6 +48,7 @@ class Backend {
     this.options = {...getDefaults(), ...this.options, ...options}; // initial
     this.allOptions = allOptions;
     this.somethingLoaded = false;
+    this.isProjectNotExisting = false;
 
     if (typeof callback === 'function') {
       this.getOptions((err, opts) => {
@@ -113,8 +114,13 @@ class Backend {
 
     let url = utils.interpolate(this.options.getLanguagesPath, { projectId: this.options.projectId });
 
+    if (this.isProjectNotExisting) return callback(new Error(`locize project ${this.options.projectId} does not exist!`));
+
     this.loadUrl(url, (err, ret, info) => {
-      if (!this.somethingLoaded && info && info.resourceNotExisting) return callback(new Error(`locize project ${this.options.projectId} does not exist!`));
+      if (!this.somethingLoaded && info && info.resourceNotExisting) {
+        this.isProjectNotExisting = true;
+        return callback(new Error(`locize project ${this.options.projectId} does not exist!`));
+      }
       this.somethingLoaded = true;
       callback(err, ret)
     });
@@ -159,6 +165,15 @@ class Backend {
       if (callback) callback(null);
       return;
     }
+    if (this.isProjectNotExisting) {
+      const err = new Error(`locize project ${this.options.projectId} does not exist!`);
+      if (callback) {
+        callback(err);
+      } else {
+        logger.error(err.message);
+      }
+      return;
+    }
     this.getLanguages((err) => {
       if (err && err.message && err.message.indexOf('does not exist') > 0) {
         if (callback) return callback(err);
@@ -184,6 +199,16 @@ class Backend {
       if (isMissing) return callback(new Error(isMissing), false);
 
       url = utils.interpolate(this.options.loadPath, { lng: language, ns: namespace, projectId: this.options.projectId, version: this.options.version });
+    }
+
+    if (this.isProjectNotExisting) {
+      const err = new Error(`locize project ${this.options.projectId} does not exist!`);
+      if (callback) {
+        callback(err);
+      } else {
+        logger.error(err.message);
+      }
+      return;
     }
 
     this.loadUrl(url, (err, ret, info) => {
@@ -220,12 +245,9 @@ class Backend {
   }
 
   create(languages, namespace, key, fallbackValue, callback, options) {
-    const { logger } = this.services;
-
     this.checkIfProjectExists((err) => {
       if (err) {
-        if (callback) return callback(err);
-        logger.error(err.message);
+        if (callback) callback(err);
         return;
       }
 
