@@ -1,3 +1,7 @@
+### 3.1.1
+
+- make sure checkIfProjectExists is not called, while waiting for response
+
 ### 3.1.0
 
 - check if project exists
