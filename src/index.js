@@ -257,86 +257,105 @@ class Backend {
     });
   }
 
+  writePage(lng, namespace, missings, callback) {
+    let missingUrl = utils.interpolate(this.options.addPath, { lng: lng, ns: namespace, projectId: this.options.projectId, version: this.options.version });
+    let updatesUrl = utils.interpolate(this.options.updatePath, { lng: lng, ns: namespace, projectId: this.options.projectId, version: this.options.version });
+
+    let hasMissing= false;
+    let hasUpdates = false;
+    const payloadMissing = {};
+    const payloadUpdate = {};
+
+    missings.forEach(item => {
+      const value = (item.options && item.options.tDescription) ? { value: item.fallbackValue || '', context: { text: item.options.tDescription } } : item.fallbackValue || ''
+      if (item.options && item.options.isUpdate) {
+        if (!hasUpdates) hasUpdates = true;
+        payloadUpdate[item.key] = value;
+      } else {
+        if (!hasMissing) hasMissing = true;
+        payloadMissing[item.key] = value;
+      }
+    });
+
+    let todo = 0;
+    if (hasMissing) todo++;
+    if (hasUpdates) todo++;
+    const doneOne = () => {
+      todo--;
+      if (!todo) callback()
+    };
+
+    if (!todo) doneOne();
+
+    if (hasMissing) {
+      const reqOptions = {
+        uri: missingUrl,
+        headers: {
+          'Authorization': this.options.apiKey
+        }
+      };
+      ajax(reqOptions, (err, payloadMissing, res) => {
+        //const statusCode = xhr.status.toString();
+        // TODO: if statusCode === 4xx do log
+
+        doneOne();
+      }, payloadMissing);
+    }
+
+    if (hasUpdates) {
+      const reqOptions = {
+        uri: updatesUrl,
+        headers: {
+          'Authorization': this.options.apiKey
+        }
+      };
+      ajax(reqOptions, (err, payloadUpdate, res) => {
+        //const statusCode = xhr.status.toString();
+        // TODO: if statusCode === 4xx do log
+
+        doneOne();
+      }, payloadUpdate);
+    }
+  }
+
   write(lng, namespace) {
     let lock = utils.getPath(this.queuedWrites, ['locks', lng, namespace]);
     if (lock) return;
 
-    let missingUrl = utils.interpolate(this.options.addPath, { lng: lng, ns: namespace, projectId: this.options.projectId, version: this.options.version });
-    let updatesUrl = utils.interpolate(this.options.updatePath, { lng: lng, ns: namespace, projectId: this.options.projectId, version: this.options.version });
-
-
     let missings = utils.getPath(this.queuedWrites, [lng, namespace]);
     utils.setPath(this.queuedWrites, [lng, namespace], []);
+    const pageSize = 1000;
 
     if (missings.length) {
       // lock
       utils.setPath(this.queuedWrites, ['locks', lng, namespace], true);
 
-      let hasMissing= false;
-      let hasUpdates = false;
-      const payloadMissing = {};
-      const payloadUpdate = {};
+      const namespaceSaved = () => {
+        // unlock
+        utils.setPath(this.queuedWrites, ['locks', lng, namespace], false);
 
-      missings.forEach(item => {
-        const value = (item.options && item.options.tDescription) ? { value: item.fallbackValue || '', context: { text: item.options.tDescription } } : item.fallbackValue || ''
-        if (item.options && item.options.isUpdate) {
-          if (!hasUpdates) hasUpdates = true;
-          payloadUpdate[item.key] = value;
-        } else {
-          if (!hasMissing) hasMissing = true;
-          payloadMissing[item.key] = value;
-        }
+        missings.forEach((missing) => {
+          if (missing.callback) missing.callback();
+        });
+
+        // rerun
+        this.debouncedProcess(lng, namespace);
+      };
+
+      const amountOfPages = missings.length / pageSize;
+      let pagesDone = 0;
+
+      let page = missings.splice(0, pageSize);
+      this.writePage(lng, namespace, page, () => {
+        pagesDone++;
+        if (pagesDone >= amountOfPages) namespaceSaved();
       });
-
-      let todo = 0;
-      if (hasMissing) todo++;
-      if (hasUpdates) todo++;
-      const doneOne = () => {
-        todo--;
-
-        if (!todo) {
-          // unlock
-          utils.setPath(this.queuedWrites, ['locks', lng, namespace], false);
-
-          missings.forEach((missing) => {
-            if (missing.callback) missing.callback();
-          });
-
-          // rerun
-          this.debouncedProcess(lng, namespace);
-        }
-      }
-
-      if (!todo) doneOne();
-
-      if (hasMissing) {
-        const reqOptions = {
-          uri: missingUrl,
-          headers: {
-            'Authorization': this.options.apiKey
-          }
-        };
-        ajax(reqOptions, (err, payloadMissing, res) => {
-          //const statusCode = xhr.status.toString();
-          // TODO: if statusCode === 4xx do log
-
-          doneOne();
-        }, payloadMissing);
-      }
-
-      if (hasUpdates) {
-        const reqOptions = {
-          uri: updatesUrl,
-          headers: {
-            'Authorization': this.options.apiKey
-          }
-        };
-        ajax(reqOptions, (err, payloadUpdate, res) => {
-          //const statusCode = xhr.status.toString();
-          // TODO: if statusCode === 4xx do log
-
-          doneOne();
-        }, payloadUpdate);
+      while (page.length === pageSize) {
+        page = missings.splice(0, pageSize);
+        if (page.length) this.writePage(lng, namespace, page, () => {
+          pagesDone++;
+          if (pagesDone >= amountOfPages) namespaceSaved();
+        });
       }
     }
   }
