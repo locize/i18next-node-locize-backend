@@ -1,3 +1,9 @@
+# DEPRECATED
+
+Can be replaced with: [i18next-locize-backend](https://github.com/locize/i18next-locize-backend)
+
+---
+
 # Introduction
 
 This is a i18next backend to be used with node.js for the [locize](http://locize.com) service. It's for the node.js server what the [i18next-locize-backend](https://github.com/locize/i18next-locize-backend) is for the browser.
